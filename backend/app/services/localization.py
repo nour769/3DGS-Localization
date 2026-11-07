@@ -12,15 +12,15 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 
 def validate_image(data: bytes):
     if not data:
-        raise ValueError("The uploaded image is empty.")
+        raise ValueError("Le fichier image est vide.")
     try:
         with Image.open(data_stream(data)) as image:
             image.verify()
             width, height = image.size
     except (UnidentifiedImageError, OSError, ValueError) as exc:
-        raise ValueError("Upload a valid JPEG, PNG, WebP, or BMP image.") from exc
+        raise ValueError("Choisissez une image JPEG, PNG, WebP ou BMP valide.") from exc
     if width < 32 or height < 32:
-        raise ValueError("Image dimensions must be at least 32 × 32 pixels.")
+        raise ValueError("L’image doit mesurer au moins 32 × 32 pixels.")
     return width, height
 
 
@@ -33,7 +33,7 @@ def data_stream(data):
 def save_upload(data: bytes, filename: str, upload_dir: Path):
     suffix = Path(filename).suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
-        raise ValueError("Unsupported image extension.")
+        raise ValueError("Ce format d’image n’est pas pris en charge.")
     upload_dir.mkdir(parents=True, exist_ok=True)
     path = upload_dir / f"{secrets.token_hex(16)}{suffix}"
     path.write_bytes(data)

@@ -11,7 +11,7 @@ import numpy as np
 from app.config import project_data_paths
 from app import create_app
 from app.extensions import db
-from app.localization.engine import LocalizationUnavailable
+from app.localization.engine import LocalizationEngine, LocalizationUnavailable
 from app.services.scenes import SceneManager
 
 
@@ -275,7 +275,23 @@ class ApiTests(unittest.TestCase):
             content_type="multipart/form-data",
         )
         self.assertEqual(response.status_code, 400)
-        self.assertIn("valid", response.json["error"])
+        self.assertIn("valide", response.json["error"])
+
+    def test_featureless_upload_returns_plain_language_failure_without_loading_scene(self):
+        self.app.extensions["localization_engine"] = LocalizationEngine(
+            self.app.config
+        )
+        response = self.client.post(
+            "/api/localize",
+            data={
+                "scene_id": "road",
+                "image": (io.BytesIO(self.image_bytes()), "flat-image.png"),
+            },
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json["localization"]["status"], "failed")
+        self.assertIn("aucun détail visible", response.json["error"].lower())
 
     def test_unavailable_engine_is_reported_and_saved_as_failed(self):
         self.app.extensions["localization_engine"] = UnavailableLocalizationEngine()

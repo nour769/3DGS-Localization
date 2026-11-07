@@ -82,6 +82,20 @@ class GeometryTests(unittest.TestCase):
             with self.assertRaisesRegex(LocalizationError, "exactly four"):
                 engine._query_intrinsics(1242, 375, 960, 290)
 
+    def test_nearly_black_query_image_is_rejected_with_actionable_message(self):
+        image = np.zeros((375, 1242), dtype=np.uint8)
+        with self.assertRaisesRegex(LocalizationError, "presque entièrement noire"):
+            LocalizationEngine._validate_query_visibility(image)
+
+    def test_textured_scene_image_is_not_rejected_as_black(self):
+        image = np.tile(np.arange(256, dtype=np.uint8), (64, 1))
+        LocalizationEngine._validate_query_visibility(image)
+
+    def test_uniform_query_image_is_rejected_as_lacking_detail(self):
+        image = np.full((375, 1242), 128, dtype=np.uint8)
+        with self.assertRaisesRegex(LocalizationError, "aucun détail visible"):
+            LocalizationEngine._validate_query_visibility(image)
+
 
 if __name__ == "__main__":
     unittest.main()

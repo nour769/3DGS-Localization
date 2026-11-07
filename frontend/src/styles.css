@@ -189,7 +189,7 @@ h1, h2, h3, p { margin-top: 0; }
 .result-uncertain .result-icon { color: #edbd76; background: #372b1c; }.result-failed .result-icon { color: #ee868e; background: #3b2025; }
 .result-heading > div:nth-child(2) { flex: 1; }
 .result-title { color: #dce7e3; font-size: 13px; font-weight: 600; }.result-subtitle { margin-top: 4px; color: #899a93; font-size: 9px; }
-.result-metrics { display: grid; grid-template-columns: repeat(3, 1fr); margin: 16px 0 0; padding: 13px 0; border-top: 1px solid #26372f; border-bottom: 1px solid #26372f; }
+.result-metrics { display: grid; grid-template-columns: 1fr; margin: 16px 0 0; padding: 13px 0; border-top: 1px solid #26372f; border-bottom: 1px solid #26372f; }
 .result-metrics > div { display: flex; flex-direction: column; gap: 5px; padding: 0 12px; border-right: 1px solid #26372f; }.result-metrics > div:first-child { padding-left: 0; }.result-metrics > div:last-child { border: 0; }
 .result-metrics span, .detail-group > span { color: #70877d; font: 9px "DM Mono", monospace; letter-spacing: .04em; }
 .result-metrics strong { color: #e2ece7; font: 600 17px "Space Grotesk", sans-serif; }.result-metrics strong i { color: #8ca399; font-size: 10px; font-style: normal; }
@@ -199,6 +199,10 @@ h1, h2, h3, p { margin-top: 0; }
 .pose-block > span { display: flex; align-items: center; gap: 5px; color: #789087; font: 9px "DM Mono", monospace; }
 .pose-block > strong { color: #d4dfda; font: 11px "DM Mono", monospace; }.pose-block > small { color: #71827a; font-size: 9px; }
 .result-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 11px; border-top: 1px solid #26372f; color: #82978b; font-size: 9px; }
+.result-advanced { margin: 0 0 14px; color: #8c9b9c; font-size: 11px; }
+.result-advanced summary { width: fit-content; cursor: pointer; color: #9fb3b6; }
+.result-advanced > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px 14px; margin-top: 10px; padding: 11px; border: 1px solid #26373f; border-radius: 6px; background: #0e171c; }
+.result-advanced strong { color: #c5d1d2; font-weight: 500; text-align: right; }
 .failure-detail { display: flex; flex-direction: column; gap: 6px; margin-top: 18px; padding-top: 13px; border-top: 1px solid #40292e; color: #d5a0a3; font-size: 10px; }.failure-detail span { color: #8e777b; }
 .history-panel { overflow: hidden; }
 .table-heading { display: flex; justify-content: space-between; align-items: center; padding: 16px 17px; border-bottom: 1px solid #202c34; }

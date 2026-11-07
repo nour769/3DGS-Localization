@@ -2,6 +2,8 @@
 
 A research-oriented web platform for estimating a query camera pose in a COLMAP reconstruction, reviewing saved results, inspecting Gaussian PLY scenes, and asking a data-grounded AI copilot about the workspace.
 
+The interface is designed around the user's result: upload a clear photo, choose a scene, and review the estimated position and whether it needs checking. Matching counts and pixel-level alignment details are available under “Détails supplémentaires”. Photos that are almost entirely black or have no visible detail are stopped with an actionable message; localization acceptance thresholds are unchanged.
+
 The original Colab notebooks and large scene assets are left untouched. The app's localization path uses SIFT query/reference descriptors linked to **observed COLMAP 3D points**, then estimates a world-to-camera pose using OpenCV PnP-RANSAC. DINOv2 retrieval is available as an optional dependency; when it is off, the candidate prefilter is a color-histogram fallback and is explicitly reported in each run.
 
 The scene explorer embeds the official SuperSplat Viewer on the PlayCanvas engine for the original binary 3DGS PLY. It renders the anisotropic Gaussians, quaternion rotations, sigmoid opacity, base spherical-harmonic color and all 45 higher-order coefficients (SH degree 3). The PLY is served unchanged; localization camera overlays are rendered in the same COLMAP world frame when the configured alignment flag is enabled. Initial framing uses the registered COLMAP camera nearest the trajectory median (`GET /api/scenes/{scene_id}/viewer-camera`), with its own calibrated vertical field of view, rather than averaging directions across the route. This is not a point-cloud or mesh approximation.

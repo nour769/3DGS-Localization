@@ -23,7 +23,7 @@ class LocalizationUnavailable(LocalizationError):
 
 
 class LocalizationEngine:
-    """SIFT correspondences to observed COLMAP 3D points, followed by PnP-RANSAC."""
+    """Estimate a camera pose from image features and observed COLMAP 3D points."""
 
     def __init__(self, config):
         self.config = config
@@ -180,8 +180,8 @@ class LocalizationEngine:
                 references.append(reference)
         if not references:
             raise LocalizationUnavailable(
-                "No reference images with SIFT features linked to COLMAP 3D points "
-                "were found. Check the image paths and reconstruction observations."
+                "La scène choisie ne contient pas de photos de référence exploitables. "
+                "Vérifiez que les données de la scène et ses photos sont bien installées ensemble."
             )
         index = {"reconstruction": reconstruction, "references": references}
         self._indexes[scene_id] = index
@@ -345,13 +345,18 @@ class LocalizationEngine:
             raise LocalizationError("Uploaded file is not a readable image.")
         source_height, source_width = bgr.shape[:2]
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+        self._validate_query_visibility(gray)
         query, _, _ = self._resize(rgb)
         query_gray = cv2.cvtColor(query, cv2.COLOR_RGB2GRAY)
         query_keypoints, query_descriptors = cv2.SIFT_create(nfeatures=5000).detectAndCompute(
             query_gray, None
         )
         if query_descriptors is None or len(query_keypoints) < 8:
-            raise LocalizationError("Too few SIFT features were detected in the query image.")
+            raise LocalizationError(
+                "La photo ne contient pas assez de détails visibles pour estimer une position. "
+                "Essayez une photo nette et bien éclairée, montrant des éléments reconnaissables."
+            )
         index = self._load_index(scene)
         selected, retrieval_method = self._select_references(
             index["references"], query
@@ -368,7 +373,10 @@ class LocalizationEngine:
         if result is None:
             return {
                 "status": "failed",
-                "message": "PnP-RANSAC could not estimate a pose from the selected references.",
+                "message": (
+                    "Aucune ressemblance fiable n’a été trouvée avec cette scène. "
+                    "Essayez une photo nette montrant davantage de détails du lieu."
+                ),
                 "pose": None,
                 "metrics": {
                     "retrieval_method": retrieval_method,
@@ -390,6 +398,21 @@ class LocalizationEngine:
             <= float(self.config["PNP_REPROJECTION_ERROR"])
             and result["inlier_ratio"] >= 0.1
         )
+        if is_localized:
+            message = "La position a été trouvée avec suffisamment de détails visuels concordants."
+        elif result["inliers"] < minimum_inliers:
+            message = (
+                f"Seuls {result['inliers']} détails visuels concordent ; il en faut au moins "
+                f"{minimum_inliers} pour confirmer la position. Essayez une photo nette "
+                "montrant davantage le lieu."
+            )
+        elif (
+            result["median_reprojection_error_px"]
+            > float(self.config["PNP_REPROJECTION_ERROR"])
+        ):
+            message = "Les détails de la photo ne s’alignent pas assez avec la scène. Essayez une photo plus nette."
+        else:
+            message = "Les détails reconnus indiquent des positions différentes. Essayez une photo prise depuis un point de vue plus reconnaissable."
         pose = {
             "coordinate_frame": "COLMAP_world",
             "translation_units": "COLMAP_scene_units_not_necessarily_meters",
@@ -425,12 +448,23 @@ class LocalizationEngine:
         }
         return {
             "status": "localized" if is_localized else "uncertain",
-            "message": None
-            if is_localized
-            else "A pose was estimated, but it did not meet all confidence thresholds.",
+            "message": message,
             "pose": pose,
             "metrics": metrics,
         }
+
+    @staticmethod
+    def _validate_query_visibility(gray_image):
+        mean_brightness = float(np.mean(gray_image))
+        dark_pixel_ratio = float(np.mean(gray_image < 8))
+        if mean_brightness < 5 and dark_pixel_ratio > 0.95:
+            raise LocalizationError(
+                "La photo est presque entièrement noire. Choisissez une image visible du lieu."
+            )
+        if float(np.std(gray_image)) < 1:
+            raise LocalizationError(
+                "La photo ne contient presque aucun détail visible. Essayez une image plus nette du lieu."
+            )
 
     def _calibration_warning(self, image_width, image_height):
         image_ratio = image_width / image_height
@@ -439,7 +473,7 @@ class LocalizationEngine:
         )
         if abs(image_ratio / calibration_ratio - 1.0) > 0.01:
             return (
-                "Query aspect ratio differs from the configured calibration by more "
-                "than 1%; verify cropping or camera calibration."
+                "Le format de la photo diffère de celui prévu. Si elle a été recadrée, "
+                "la position estimée peut être moins fiable."
             )
         return None
